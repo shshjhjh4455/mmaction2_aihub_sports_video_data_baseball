@@ -93,4 +93,119 @@ Further instructions on how to use the extracted skeleton data for training mode
 
 
 
+PoseC3D https://mmaction2.readthedocs.io/en/latest/model_zoo/skeleton.html#posec3d
+![142995620-21b5536c-8cda-48cd-9cb9-50b70cab7a89](https://github.com/shshjhjh4455/mmaction2_aihub_sports_video_data_baseball/assets/44297309/18f7e20c-43a1-4300-bbcb-154da8b7c3b9)
+![116531676-04cd4900-a912-11eb-8db4-a93343bedd01](https://github.com/shshjhjh4455/mmaction2_aihub_sports_video_data_baseball/assets/44297309/a5c96455-6672-411a-ac0b-ac84cda522a4)
+
+스켈레톤 기반 행동인식 poseC3D 모델 사용 방안
+커스텀 데이터셋(AI_hub)으로 poseC3D 모델을 학습
+pre trained된 Human detector와 pose estimator를 사용
+학습된 모델로 영상 객체에 라벨 생성
+
+커스텀 데이터셋으로 모델 학습을 위한 전처리 단계
+다운로드한 AI_hub 데이터셋은 동영상포맷이 아닌 이미지 프레임별로 나누어져 있어서, 행동별로 나누어진 모든 폴더의 이미지를 각각의 동영상으로 변환해야한다.
+변환한 동영상으로부터 스켈레톤을 포함한 여러 정보를 추출하여 하나의 파일로 압축한다.
+압축한 파일을 사용해서 PoseC3D 모델을 학습 시킨다.
+
+
+기존에 모델 코드 slowonly_r50_8xb16-u48-240e_gym-keypoint.py  수정하여 사용
+경로 configs/skeleton/posec3d/slowonly_r50_8xb16-u48-240e_gym-keypoint.py
+num_classes=13, ann_file = 'data/skeleton/output/custom.pkl'
+
+커스텀 데이터셋으로 모델 학습
+코랩에서 실행
+!python tools/train.py configs/skeleton/posec3d/slowonly_r50_u48_240e_customdata_xsub_keypoint.py --work-dir work_dirs/slowonly_r50_u48_240e_customdata_xsub_keypoint --seed 0 --resume
+
+모델 : PoseC3D
+인풋 : custom.pkl (AI_hub 데이터셋으로 생성한 파일)
+
+학습 환경 : Colab pro+ ,GPU : A100
+학습 소요시간 : 6.3시간
+
+성능평가 : test 데이터는 validation 데이터 사용
+acc/top1: 0.9636 acc/top5: 0.9838 acc/mean1: 0.9717
+
+checkpoint : best_acc_top1_epoch_22.pth
+![Screenshot 2024-02-22 at 2 27 49 PM](https://github.com/shshjhjh4455/mmaction2_aihub_sports_video_data_baseball/assets/44297309/8d777e74-abdc-4471-9871-e7b2ed56c5bd)
+
+label_map_custom.txt
+catcher throw
+fielder catch a fly ball
+fielder catch a ground ball
+fielder filder throw
+hitter bunt
+hitter hitting
+hitter swing
+pitcher bulk
+pitcher overhand throw
+pitcher pick off throw
+pitcher side arm throw
+pitcher underhand throw
+runner run
+
+학습된 모델로 영상 객체에 라벨 생성 
+코랩에서 실행
+
+Skeleton-based Action Recognition Demo
+human detector : Faster-RCNN
+pose estimator : HRNetw32
+skeleton-based action recognizer : PoseC3D-CUSTOM-keypoint
+checkpoint : best_acc_top1_epoch_22.pth
+
+# ZX0QNPTZO56M.mp4
+# Skeleton-based Action Recognition Demo
+
+!python demo/demo_skeleton.py \
+    video/mlb/ZX0QNPTZO56M.mp4 \
+    demo/demo_output_ZX0QNPTZO56M.mp4 \
+    --config configs/skeleton/posec3d/slowonly_r50_u48_240e_customdata_xsub_keypoint.py \
+    --checkpoint work_dirs/slowonly_r50_u48_240e_customdata_xsub_keypoint/best_acc_top1_epoch_22.pth \
+    --det-config demo/demo_configs/faster-rcnn_r50_fpn_2x_coco_infer.py \
+    --det-checkpoint http://download.openmmlab.com/mmdetection/v2.0/faster_rcnn/faster_rcnn_r50_fpn_2x_coco/faster_rcnn_r50_fpn_2x_coco_bbox_mAP-0.384_20200504_210434-a5d8aa15.pth \
+    --det-score-thr 0.9 \
+    --det-cat-id 0 \
+    --pose-config demo/demo_configs/td-hm_hrnet-w32_8xb64-210e_coco-256x192_infer.py \
+    --pose-checkpoint https://download.openmmlab.com/mmpose/top_down/hrnet/hrnet_w32_coco_256x192-c78dce93_20200708.pth \
+   --label-map tools/data/skeleton/label_map_custom.txt
+
+   *예시* 
+입력 : 야구 공 던지는 
+동영상 / 출력 : 해당 영상에 해당하는 레이블 값과 스켈레톤 표시 동영상
+![Screenshot 2024-02-22 at 2 36 46 PM](https://github.com/shshjhjh4455/mmaction2_aihub_sports_video_data_baseball/assets/44297309/a4ba0abb-73c9-4a98-ad18-57e26cc53dd1)
+스켈레톤이 정상적으로 표시됨
+입력 영상에 해당하는 레이블 값 추출 성공
+
+야구 중계 영상 테스트![Screenshot 2024-02-22 at 2 37 28 PM](https://github.com/shshjhjh4455/mmaction2_aihub_sports_video_data_baseball/assets/44297309/db0ae673-97a3-4e2d-a008-9e215841ffc2)
+사람 1명에 대한 레이블 예측 성공
+
+문제점![Screenshot 2024-02-22 at 2 38 05 PM](https://github.com/shshjhjh4455/mmaction2_aihub_sports_video_data_baseball/assets/44297309/4c91a586-6108-45e0-93ce-aedae82f4a2b)
+투수, 타자, 포수, 심판
+모두를 타자라고 오인식
+
+오인식 이유 파악
+최소 15개의 프레임을 보고 행동을 판단하는 모델에게 1개의 프레임만을 보여줌으로써
+행동을 추론하는 과정에서 오류 발생
+![Screenshot 2024-02-22 at 2 38 50 PM](https://github.com/shshjhjh4455/mmaction2_aihub_sports_video_data_baseball/assets/44297309/d70560e9-c6de-4dde-86e1-7f9326fbeceb)
+
+문제점 해결방안![Screenshot 2024-02-22 at 2 39 27 PM](https://github.com/shshjhjh4455/mmaction2_aihub_sports_video_data_baseball/assets/44297309/a66ded35-5ea1-4764-8737-574f744a3390)
+영상 프레임을 48프레임 청크로 나눈다.
+
+인식된 사람들을 코사인 유사도를 통해 각각의 사람으로 구분하고 posec3d 포즈추정 과정을 진행한다.
+![Screenshot 2024-02-22 at 2 39 53 PM](https://github.com/shshjhjh4455/mmaction2_aihub_sports_video_data_baseball/assets/44297309/00dfd2f7-d379-4b4e-97d8-952ed2190134)
+
+데모 코드
+!python demo/custom_demo_skeleton.py ./data/cut_video.mp4 --output-dir ./demo/middle --output-file output --config ./configs/skeleton/posec3d/slowonly_r50_u48_240e_customdata_xsub_keypoint.py --checkpoint ./work_dirs/slowonly_r50_u48_240e_customdata_xsub_keypoint/best_acc_top1_epoch_22.pth --output-fps 15
+
+투수 인식
+![image](https://github.com/shshjhjh4455/mmaction2_aihub_sports_video_data_baseball/assets/44297309/fd509ebf-e007-4876-a0bb-365bb7be7f39)
+![image](https://github.com/shshjhjh4455/mmaction2_aihub_sports_video_data_baseball/assets/44297309/88dda875-6189-44f0-ad0d-3703f878506d)
+![image](https://github.com/shshjhjh4455/mmaction2_aihub_sports_video_data_baseball/assets/44297309/c721b93c-5328-49bf-8f87-877eb2e4976d)
+투수의 행동인식
+![image](https://github.com/shshjhjh4455/mmaction2_aihub_sports_video_data_baseball/assets/44297309/8e21784a-cd22-4bb7-8e6b-ecd6a41e926a)
+![image](https://github.com/shshjhjh4455/mmaction2_aihub_sports_video_data_baseball/assets/44297309/5684663e-90d8-4a58-a359-38746b4b1d18)
+
+
+
+
+
 
