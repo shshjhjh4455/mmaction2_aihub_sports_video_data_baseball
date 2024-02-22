@@ -1,0 +1,13 @@
+catcher throw
+fielder catch a fly ball
+fielder catch a ground ball
+fielder filder throw
+hitter bunt
+hitter hitting
+hitter swing
+pitcher bulk
+pitcher overhand throw
+pitcher pick off throw
+pitcher side arm throw
+pitcher underhand throw
+runner run
