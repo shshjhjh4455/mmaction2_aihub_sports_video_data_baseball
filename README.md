@@ -232,6 +232,7 @@ This script includes the paths to the necessary configuration files, checkpoints
 - **Problem**: The model misidentified all characters (pitcher, batter, catcher, umpire) in the frame as a batter.
 ![Misidentification in Action Recognition](https://github.com/shshjhjh4455/mmaction2_aihub_sports_video_data_baseball/assets/44297309/4c91a586-6108-45e0-93ce-aedae82f4a2b)
 - **Cause**: The model, designed to assess action based on a minimum of 15 frames, was only provided with a single frame, leading to incorrect inference.
+- 
 ![Error Due to Single Frame Analysis](https://github.com/shshjhjh4455/mmaction2_aihub_sports_video_data_baseball/assets/44297309/d70560e9-c6de-4dde-86e1-7f9326fbeceb)
 
 #### Solution
